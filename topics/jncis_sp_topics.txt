@@ -1,0 +1,84 @@
+# Protocol Indepent Routing:
+ Identify the concepts, operation, or functionality of various protocol-independent routing components
+  +Static, aggregate, and generated routes
+  +Martian addresses
+  +Routing instances, including RIB groups
+  +Load balancing
+  +Filter-based forwarding
+ Demonstrate knowledge of how to configure, monitor, or troubleshoot various protocol-independent routing components
+  +Static, aggregate, and generated routes
+  +Load balancing
+  +Filter-based forwarding
+
+# OSPF
+ Identify the concepts, operation, or functionality of OSPF
+  +Link-state database
+  +OSPF packet types
+  +Router ID
+  +Adjacencies and neighbors
+  +Designated router and backup designated router
+  +OSPF area and router types
+  +LSA packet types
+ Demonstrate knowledge of how to configure, monitor, or troubleshoot OSPF
+  +Areas, interfaces and neighbors
+  +Additional basic options
+  +Routing policy application
+  +Troubleshooting tools
+
+# ISIS
+ Identify the concepts, operation, or functionality of IS-IS
+  +Link-state database
+  +IS-IS PDUs
+  +TLVs
+  +Adjacencies and neighbors
+  +Levels and areas
+  +Designated intermediate system (DIS)
+  +Metrics
+ Demonstrate knowledge of how to configure, monitor, or troubleshoot IS-IS
+  +Levels, interfaces and adjacencies
+  +Additional basic options
+  +Routing policy application
+  +Troubleshooting tools
+
+# BGP	
+ Identify the concepts, operation, or functionality of BGP
+
+BGP basic operation
+BGP message types
+Attributes
+Route/path selection process
+IBGP and EBGP functionality and interaction
+ Demonstrate knowledge of how to configure, monitor, or troubleshoot BGP
+
+Groups and peers
+Additional basic options
+Routing policy application
+
+# L2	
+ Identify the concepts, operation, or functionality of Layer 2 bridging for the Junos OS
+Service provider switching platforms
+Bridging elements and terminology
+Frame processing
+Virtual Switches
+Provider bridging (for example, Q-in-Q Tunneling)
+ Identify the concepts, benefits, or functionality of VLANs
+Port modes
+Tagging
+MVRP
+IRB
+ Demonstrate knowledge of how to configure, monitor, or troubleshoot Layer 2 bridging or VLANs
+Interfaces and ports
+VLANs
+MVRP
+IRB
+Provider bridging
+
+# STP
+
+# MPLS
+
+# IPv6
+
+# Tunnels
+
+# HA
