@@ -15,10 +15,10 @@ juniper_jncis_sp = [
 ]
 
 clear_screen_slowly(wait=2)
-random_index = random.randint(0, len(juniper_jncis_sp) - 1)
-ask_questions(juniper_jncis_sp[0])
+ask_questions(juniper_jncis_sp[2])
 clear_screen_slowly(wait=2)
 ask_questions(juniper_jncis_sp[1])
+random_index = random.randint(0, len(juniper_jncis_sp) - 1)
 ask_questions(juniper_jncis_sp[random_index])
 clear_screen_slowly(wait=2)
 

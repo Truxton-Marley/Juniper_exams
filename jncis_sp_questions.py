@@ -1,11 +1,11 @@
 # 1. Extras (Logical Instances)
-# 2. advanced routing
+# 2. advanced routing / Protocol Independent Routing
 # 3. ospf
-# 3. qinq
-# 4. lacp
-# 5. mc-lag
-# 6. stp
-# 8. isis
+# 4. isis
+# 5. qinq
+# 6. lacp
+# 7. mc-lag
+# 8. stp
 # 9. mpls 101
 # 10. LDP / RSVP
 # 11. CSPF
@@ -18,6 +18,17 @@
 questions_extras = [
 {
 "question" : """
+# notes for EVE-NG vMX startup:
+# delete chassis auto-image-upgrade
+# set chassis fpc 0 lite-mode
+# set system syslog user * pfe none
+
+# Did not find this in the Junos documentation, but seems needed
+# to get the logical tunnels:
+root# show chassis | display set
+set chassis fpc 0 pic 0 tunnel-services bandwidth 10g
+set chassis fpc 0 number-of-ports 8
+set chassis network-services enhanced-ip
 
 https://www.juniper.net/documentation/us/en/software/junos/logical-systems/index.html
 
@@ -28,10 +39,11 @@ Logical-Systems
 # set logical-systems R1
 # commit and-quit
 > set cli logical-system R1
+> clear cli logical-system
 ----
-set logical-systems R1
+set logical-system R1
 """,
-"answer" : """set logical-systems R1""",
+"answer" : """set logical-system R1""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -79,7 +91,36 @@ set logical-systems R1 interfaces lt-0/0/0 unit 12 peer-unit 21""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
-"post_task_output": """"""
+"post_task_output": """root> show configuration logical-systems     
+R1 {
+    interfaces {
+        lt-0/0/0 {
+            unit 12 {
+                encapsulation ethernet;
+                peer-unit 21;
+                family inet {
+                    address 10.0.1.10/31;
+                }
+                family iso;
+            }
+        }
+    }
+}
+R2 {
+    interfaces {
+        lt-0/0/0 {
+            unit 21 {
+                encapsulation ethernet;
+                peer-unit 12;
+                family inet {
+                    address 10.0.1.11/31;
+                }
+                family iso;             
+            }
+        }
+    }
+}
+"""
 },
 ]
 
@@ -93,9 +134,9 @@ Load Balancing:
 -Off by default in Junos
 -Per Packet vs Per Flow (nowadays only Per Flow, but command still reads Per Packet)
 
-show route forwarding-table
+show route forwarding-table destination 1.1.1.1/32
 show routing-options
-
+---
 set policy-options policy-statement LB term 1 then load-balance per-packet
 set routing-options forwarding-table export LB
 
@@ -105,7 +146,18 @@ set routing-options forwarding-table export LB""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
-"post_task_output": """"""
+"post_task_output": """policy-options {
+    policy-statement LB {
+        then {
+            load-balance per-packet;
+        }
+    }
+}
+routing-options {
+    forwarding-table {
+        export LB;
+    }
+}"""
 },
 {
 "question" : """
@@ -189,7 +241,32 @@ set routing-options aggregate route 10.10.0.0/16 discard
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
-"post_task_output": """"""
+"post_task_output": """192.168.1.0/24     *[Aggregate/130] 00:00:07
+                      Reject
+#
+#
+#
+root@SP-LAB:R1# run show route 192.168.1.0 detail
+
+inet.0: 10 destinations, 10 routes (9 active, 0 holddown, 1 hidden)
+192.168.1.0/24 (1 entry, 1 announced)
+        *Aggregate Preference: 130
+                Next hop type: Reject, Next hop index: 0
+                Address: 0xa1dd428
+                Next-hop reference count: 3
+                State: <Active Int Ext>
+                Age: 1:30
+                Validation State: unverified
+                Task: Aggregate
+                Announcement bits (1): 0-KRT
+                AS path: I  (LocalAgg)
+                Flags:                  Depth: 0        Active
+                AS path list:
+                AS path: I Refcount: 2
+                Contributing Routes (2):
+                        192.168.1.1/32 proto Direct
+                        192.168.1.3/32 proto Static
+"""
 },
 {
 "question" : """
@@ -227,6 +304,9 @@ set routing-instances foo interface xe-0/0/0:0.231
 set routing-instances foo protocols ospf area 0 interface xe-0/0/0:0.231
 
 show configuration routing-instances
+
+show route table foo.inet.0
+ping 1.1.1.1 routing-instance foo
 ----
 set routing-instances foo instance-type virtual-router
 
@@ -248,7 +328,6 @@ Sharing Routes and/or Route Leaking options:
     -Logical Tunnel
 
 Rib-Group
-#TODO: Lab and document!!!
 
 set routing-options rib-groups <NAME> import-rib [ <source.inet.0> <dest.inet.0> ]
 set routing-options rib-groups foo-to-global import-rib [ foo.inet.0 inet.0> ]
@@ -268,6 +347,54 @@ set routing-instances foo protocols ospf rib-group foo-to-global""",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
+},
+{
+"question" : """
+Protocols Independent Routing
+
+Sharing Routes and/or Route Leaking options:
+    -Physical Connection
+    -Rib-Groups
+    -Instance Import
+    -Logical Tunnel
+
+Rib-Group
+
+Copy interface routes from the global routing table into foo.inet.0:
+
+routing-instances {
+    foo {
+        instance-type virtual-router;
+        interface lt-0/0/0.13;
+    }
+}
+routing-options {
+    interface-routes {
+        rib-group inet COPY-ROUTES;
+    }
+    rib-groups {
+        COPY-ROUTES {
+            import-rib [ inet.0 foo.inet.0 ];
+        }
+    }
+}
+set routing-instances R1-R3 instance-type virtual-router
+set routing-instances R1-R3 interface lt-0/0/0.13
+
+set routing-options rib-groups COPY-ROUTES import-rib inet.0
+set routing-options rib-groups COPY-ROUTES import-rib R1-R3.inet.0
+
+# "inet" is automatically added if not given with the command:
+set routing-options interface-routes rib-group inet global-ints
+---
+set routing-options interface-routes rib-group global-ints
+
+""",
+"answer" : """set routing-options interface-routes rib-group global-ints""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
 }
 ]
 
@@ -277,10 +404,15 @@ questions_ospf = [
 "question" : """
 OSPF
 
+RP: {internal: 10, external: 150}
+
 Down (Attempt) -> Init -> 2-Way -> ExStart -> ExChange -> Loading -> Full
 
-Router Priority Default: 128
-Cisco Default Priority: 1
+DR/BDR: non-deterministic
+    -Priority, Router-ID
+    -Priority: 0-255
+    -Router Priority Default: 128
+    -Cisco Default Priority: 1
 
 set routing-options router-id 1.1.1.1
 set protocols ospf area 0 interface ge-0/0/0.0
@@ -296,17 +428,32 @@ set protocols ospf area 2 stub no-summaries
 set protocols ospf area 2 nssa
 set protocols ospf area 2 nssa no-summaries
 
-
 show opsf neighbor
 show ospf interface
 show ospf database
+----
+show ospf database
 
 """,
-"answer" : """""",
-"prompt": "root@vmx1# ",
+"answer" : """show ospf database""",
+"prompt": "root@vmx1> ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
-"post_task_output": """"""
+"post_task_output": """
+    OSPF database, Area 0.0.0.1
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Router  *192.168.1.1      192.168.1.1      0x80000004   123  0x22 0x7e38  48
+Router   192.168.1.3      192.168.1.3      0x80000004   156  0x22 0x8c9f  36
+Network  10.0.1.9         192.168.1.3      0x80000001   156  0x22 0x8957  32
+Summary  10.0.1.12        192.168.1.3      0x80000003   899  0x22 0x5e58  28
+Summary  10.0.1.16        192.168.1.3      0x80000004  1616  0x22 0x347d  28
+Summary  10.0.1.20        192.168.1.3      0x80000003  1622  0x22 0xea0   28
+Summary  10.0.1.22        192.168.1.3      0x80000002   647  0x22 0x6a6   28
+Summary  192.168.1.2      192.168.1.3      0x80000001   899  0x22 0x9dc4  28
+Summary  192.168.1.3      192.168.1.3      0x80000002   436  0x22 0x87d9  28
+Summary  192.168.1.4      192.168.1.3      0x80000001  1616  0x22 0x89d6  28
+Summary  192.168.1.5      192.168.1.3      0x80000002   385  0x22 0x7de0  28
+Summary  192.168.1.6      192.168.1.3      0x80000002   129  0x22 0x7dde  28"""
 },
 {
 "question" : """
@@ -321,23 +468,350 @@ Type 3: Summary
 Type 4: Router-Summary (ASBR)
 Type 5: External
 Type 7: NSSA
+---
+show ospf database detail
+""",
+"answer" : """show ospf database detail""",
+"prompt": "root@vmx1> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """
+    OSPF database, Area 0.0.0.1
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Router  *192.168.1.1      192.168.1.1      0x80000004   247  0x22 0x7e38  48
+  bits 0x0, link count 2
+  id 192.168.1.1, data 255.255.255.255, Type Stub (3)
+    Topology count: 0, Default metric: 0
+  id 10.0.1.9, data 10.0.1.8, Type Transit (2)
+    Topology count: 0, Default metric: 1
+  Topology default (ID 0)
+    Type: Transit, Node ID: 10.0.1.9
+      Metric: 1, Bidirectional
+Router   192.168.1.3      192.168.1.3      0x80000004   280  0x22 0x8c9f  36
+  bits 0x1, link count 1
+  id 10.0.1.9, data 10.0.1.9, Type Transit (2)
+    Topology count: 0, Default metric: 1
+  Topology default (ID 0)
+    Type: Transit, Node ID: 10.0.1.9
+      Metric: 1, Bidirectional
+Network  10.0.1.9         192.168.1.3      0x80000001   280  0x22 0x8957  32
+  mask 255.255.255.254
+  attached router 192.168.1.3
+  attached router 192.168.1.1
+  Topology default (ID 0)
+    Type: Transit, Node ID: 192.168.1.1
+      Metric: 0, Bidirectional
+    Type: Transit, Node ID: 192.168.1.3
+      Metric: 0, Bidirectional
+Summary  10.0.1.12        192.168.1.3      0x80000003  1023  0x22 0x5e58  28
+  mask 255.255.255.254
+  Topology default (ID 0) -> Metric: 1
+Summary  10.0.1.16        192.168.1.3      0x80000004  1740  0x22 0x347d  28
+  mask 255.255.255.254
+  Topology default (ID 0) -> Metric: 1
+Summary  10.0.1.20        192.168.1.3      0x80000004    23  0x22 0xca1   28
+  mask 255.255.255.254
+  Topology default (ID 0) -> Metric: 1
+Summary  10.0.1.22        192.168.1.3      0x80000002   771  0x22 0x6a6   28
+  mask 255.255.255.254
+  Topology default (ID 0) -> Metric: 2
+Summary  192.168.1.2      192.168.1.3      0x80000001  1023  0x22 0x9dc4  28
+  mask 255.255.255.255
+  Topology default (ID 0) -> Metric: 1
+Summary  192.168.1.3      192.168.1.3      0x80000002   560  0x22 0x87d9  28
+  mask 255.255.255.255
+  Topology default (ID 0) -> Metric: 0
+Summary  192.168.1.4      192.168.1.3      0x80000001  1740  0x22 0x89d6  28
+  mask 255.255.255.255
+  Topology default (ID 0) -> Metric: 1
+Summary  192.168.1.5      192.168.1.3      0x80000002   509  0x22 0x7de0  28
+  mask 255.255.255.255
+  Topology default (ID 0) -> Metric: 1
+Summary  192.168.1.6      192.168.1.3      0x80000002   253  0x22 0x7dde  28
+  mask 255.255.255.255
+  Topology default (ID 0) -> Metric: 2
+
+root@SP-LAB:R1>"""
+},
+{
+"question" : """
+OSPF
+
+Redistribution:
+
+set policy-options policy-statement int-to-ospf term 1 from route-filter 10.0.1.2/31 exact
+set policy-options policy-statement int-to-ospf term 1 then accept
+
+set protocols ospf export int-to-ospf
+---
+set protocols ospf export int-to-ospf
 
 """,
-"answer" : """""",
+"answer" : """set protocols ospf export int-to-ospf""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """
+
+protocols {
+    ospf {
+        export int-to-ospf;
+    }
+}
+policy-options {
+    policy-statement int-to-ospf {
+        term 1 {
+            from {
+                route-filter 10.0.1.2/31 exact;
+            }
+            then accept;
+        }
+    }
+}
+
+root@SP-LAB:R2> show route
+
+inet.0: 18 destinations, 18 routes (18 active, 0 holddown, 0 hidden)
++ = Active Route, - = Last Active, * = Both
+
+10.0.1.2/31        *[OSPF/150] 00:00:11, metric 0, tag 0
+                    > to 10.0.1.13 via lt-0/0/0.23
+
+###
+
+ASBRSum  192.168.1.1      192.168.1.3      0x80000001    44  0x22 0x99c8  28
+    OSPF AS SCOPE link state database
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Extern   10.0.1.2         192.168.1.1      0x80000001   100  0x22 0x40fa  36
+
+###
+
+ASBRSum  192.168.1.1      192.168.1.3      0x80000001    79  0x22 0x99c8  28
+  mask 0.0.0.0
+  Topology default (ID 0) -> Metric: 1
+    OSPF AS SCOPE link state database
+ Type       ID               Adv Rtr           Seq      Age  Opt  Cksum  Len
+Extern   10.0.1.2         192.168.1.1      0x80000001   135  0x22 0x40fa  36
+  mask 255.255.255.254
+  Topology default (ID 0)
+    Type: 2, Metric: 0, Fwd addr: 0.0.0.0, Tag: 0.0.0.0
+
+"""
+},
+{
+"question" : """
+OSPF
+
+Troubleshooting:
+
+monitor traffic interface lt-0/0/0.31 matching "ip src 1.1.1.1"
+
+set protocols ospf traceoptions file ospf.log
+set protocols ospf traceoptions flag error
+set protocols ospf traceoptions flag event
+
+show log ospf.log | match "1.1.1.1"
+---
+show log ospf.log
+""",
+"answer" : """show log ospf.log""",
+"prompt": "root@vmx1> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """Apr 20 06:02:15.509579 OSPF packet ignored: area mismatch (0.0.0.22) from 10.0.1.12 on intf lt-0/0/0.32 area 0.0.0.2
+Apr 20 06:02:15.509596 OSPF rcvd Hello 10.0.1.12 -> 224.0.0.5 (lt-0/0/0.32 IFL 373 area 0.0.0.2)
+Apr 20 06:02:15.509608   dead_ivl 40, DR 10.0.1.12, BDR 0.0.0.0
+Apr 20 06:02:24.770377 OSPF packet ignored: area mismatch (0.0.0.22) from 10.0.1.12 on intf lt-0/0/0.32 area 0.0.0.2
+Apr 20 06:02:24.770416 OSPF rcvd Hello 10.0.1.12 -> 224.0.0.5 (lt-0/0/0.32 IFL 373 area 0.0.0.2)
+Apr 20 06:02:24.770429   dead_ivl 40, DR 10.0.1.12, BDR 0.0.0.0
+"""
+}
+]
+
+
+questions_isis = [
+{
+"question" : """
+IS-IS
+    -Distributed Databases
+    -Route Preference: 15, 18
+    -Integrated IS-IS: IS-IS with IP
+    -ES: End System, IS: Intermediate System
+    -CLNS: Connectionless-mode Network Service
+    -Levels: 0, 1, 2, 3
+        1: IS-IS within the same area (Intra-area)
+        2: IS-IS between different areas (Inter-area)
+        3: AS to AS, external
+    -Common to make entire core Level-2
+    -TLVs
+
+PDUS:
+    -IIH: IS-IS IS-IS Hello
+        *Sent to IS-IS MAC address
+    -CSNP: Complete Sequence Number PDU (like a DBD in OSPF)
+    -PSNP: Partial Sequence Number PDU (a bit like a LSR)
+    -LS-PDU (A bit like LSU)
+
+Attach-bit
+    -L1/L2 Router sends to L1 neighbors
+    -Installs a default route on other L1 routers
+
+NET: Network Entity Title
+    49.<Area-ID(16-bits)>.<area-identifier(48-bits)>.00
+    49.0001.abab.cdcd.dede.00
+
+___
+
+The Network Entity Title always begins with which number?
+
+""",
+"answer" : "49",
+"prompt": ">>> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+TLVs:
+    -1:     Area Address
+    -2:     Neighbor Metric
+    -6:     LAN ID
+    -22:    Extended Metric (extended version of 2)
+    -128:   IP Prefix Metric
+    -130:   External IP Info
+    -132:   IP Interface
+    -135:   Extended IP Metric (extended version of 128)
+    -137:   Hostname
+
+Default maxium metric is 63
+    -TLVs: 2 & 128
+wide-metrics-only maximum is 2**24
+    -TLVs: 22 and 135
+
+TLV with the hostname?
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+
+{
+"question" : """
+DIS
+    -No backup
+    -Priority (higher wins) 0-127, default of 64
+    -Tie break on the MAC/SNPA (Subnetwork Point of Attachment address)
+    -Deterministic (preempts)
+    -Routers represented as "pseudonode", summarizing the broadcast topology
+
+""",
+"answer" : "137",
+"prompt": ">>> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+set interfaces lo0 unit 0 family iso address 49.0001.aaaa.bbbb.cccc.00
+
+set interfaces ge-0/0/0 unit 0 family iso
+set protocols isis interface ge-0/0/0.0
+
+# Set to level 1 or level 2 only:
+set protocols isis level 1 disable
+set protocols isis interface ge-0/0/0.0 level 2 disable
+set protocols isis interface ge-0/0/0.0 level 1 disable
+
+# Setup authentication for IS-IS
+set protocols isis authentication-type <[simple | md5]>
+set protocols isis authentication-key 
+set protocols isis level 2 authentication-key-chain ISIS
+
+
+# Create a passive interface
+set protocols isis iterface ge-0/0/1.0 passive
+
+# Wide Metrics
+set protocols isis wide-metrics-only
+
+show isis adjacency
+show isis database
+---
+set interfaces lo0 unit 0 family iso address 49.0001.aaaa.bbbb.cccc.00
+""",
+"answer" : """set interfaces lo0 unit 0 family iso address 49.0001.aaaa.bbbb.cccc.00""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
-}
+},
+{
+"question" : """
+---
+Next:
+set interfaces ge-0/0/0 unit 0 family iso
+set protocols isis interface ge-0/0/0.0
+
+""",
+"answer" : """set interfaces ge-0/0/0 unit 0 family iso
+set protocols isis interface ge-0/0/0.0""",
+"prompt": "root@vmx1# ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
 ]
+
 
 questions_qinq = [
 {
 "question" : """
-# notes for EVE-NG vMX startup:
-# set chassis fpc 0 lite-mode
-# set system syslog user * pfe none
-
 802.1ad | Q-in-Q | Provider Bridge Network
 
 C-Tag: 202
@@ -890,88 +1364,6 @@ questions_stp = [
 },
 ]
 
-questions_isis = [
-{
-"question" : """
-IS-IS
-
-RP: 15, 18
-
-Integrated IS-IS: IS-Is with IP
-ES: End System, IS: Intermediate System
-CLNS: Connectionless-mode Network Service
-Levels: 0, 1, 2, 3
-    1: IS-IS within the same area (Intra-area)
-    2: IS-IS between different areas (Inter-area)
-    3: AS to AS, external
-
-Common to make entire core Level-2
-
-IIH: IS-IS IS-IS Hello
-    Sent to IS-IS MAC address
-
-LSP(DU)
-
-Attach-bit
-    L1/L2 Router sends to L1 neighbors
-    Installs a default route on other L1 routers
-
-CSNP: Complete Sequence Number PDU (like a DBD)
-PSNP: Partial Sequence Number PDU
-
-NET: Network Entity Title
-    49.Area-ID(16-bits).area-identifier(48-bits).00
-    49.0001.abab.cdcd.dede.00
-
-___
-
-The Network Entity Title always begins with which number?
-
-""",
-"answer" : "49",
-"prompt": ">>> ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-
-set interfaces lo0 unit 0 family iso address 49.0001.aaaa.bbbb.cccc.00
-
-set protocols isis interface ge-0/0/0.0
-set interfaces ge-0/0/0 unit 0 family iso
-
-# Set to level 1 or level 2 only:
-set protocols isis level 1 disable
-set protocols isis interface ge-0/0/0.0 level 2 disable
-set protocols isis interface ge-0/0/0.0 level 1 disable
-
-# Setup authentication for IS-IS
-set protocols isis authentication-type <[simple | md5]>
-set protocols isis authentication-key 
-set protocols isis level 2 authentication-key-chain ISIS
-
-
-# Create a passive interface
-set protocols isis iterface ge-0/0/1.0 passive
-
-# Wide Metrics
-set protocols isis wide-metrics-only
-
-show isis adjacency
-show isis database
-
-
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
 
 questions_mpls = [
 {
