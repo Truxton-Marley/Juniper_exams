@@ -701,8 +701,9 @@ TLV with the hostname?
 {
 "question" : """
 
+TLV with the neighbor metric (non-extended)?
 """,
-"answer" : "137",
+"answer" : "2",
 "prompt": ">>> ",
 "clear_screen": False,
 "suppress_positive_affirmation": False,
@@ -711,8 +712,19 @@ TLV with the hostname?
 {
 "question" : """
 
+TLV with the area address?
 """,
-"answer" : "137",
+"answer" : "1",
+"prompt": ">>> ",
+"clear_screen": False,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+TLV with the IP Prefix Metric (non-extended)?
+""",
+"answer" : "128",
 "prompt": ">>> ",
 "clear_screen": False,
 "suppress_positive_affirmation": False,
@@ -721,24 +733,14 @@ TLV with the hostname?
 {
 "question" : """
 
+Extended version of TLV 2?
 """,
-"answer" : "137",
+"answer" : "22",
 "prompt": ">>> ",
 "clear_screen": False,
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
 },
-{
-"question" : """
-
-""",
-"answer" : "137",
-"prompt": ">>> ",
-"clear_screen": False,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-
 {
 "question" : """
 DIS
@@ -748,8 +750,10 @@ DIS
     -Deterministic (preempts)
     -Routers represented as "pseudonode", summarizing the broadcast topology
 
+Default priority for Juniper IS-IS?
+
 """,
-"answer" : "137",
+"answer" : "64",
 "prompt": ">>> ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -809,7 +813,172 @@ set protocols isis interface ge-0/0/0.0""",
 ]
 
 
+questions_bgp = [
+{
+"question" : """
+BGP
+
+TCP 179
+RP: 170 (vs Cisco AD: 20/200)
+States: Idle, Active, Connect, OpenSent, OpenConfirm, Established
+Messages: Open, Keepalive, Update, Notification, Refresh
+
+set routing-options autonomous-system 42
+set routing-options router-id 24.24.24.24
+set protocols bgp group EXTERNAL-PEERS peer-as 65001
+set protocols bgp group EXTERNAL-PEERS type external
+set protocols bgp group EXTERNAL-PEERS local-as 42
+set protocols bgp group EXTERNAL-PEERS neighbor 42.65.42.65
+
+set protocols bgp group INTERNAL-PEERS type internal
+set protocols bgp group INTERNAL-PEERS export NHS
+set protocols bgp group INTERNAL-PEERS local-address 24.24.24.24
+set protocols bgp group INTERNAL-PEERS neighbor 33.33.33.33
+
+---
+set routing-options autonomous-system 42
+
+""",
+"answer" : """set routing-options autonomous-system 42""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+BGP
+
+set policy-options policy-statement PS-CONN-TO-BGP term 10 from protocol direct
+set policy-options policy-statement PS-CONN-TO-BGP term 10 from route-filter 33.33.33.33/32 exact
+set policy-options policy-statement PS-CONN-TO-BGP term 10 then accept
+
+set policy-options policy-statement PS-EXT-TO-BGP term nhs from protocol bgp
+set policy-options policy-statement PS-EXT-TO-BGP term nhs from route-type external
+set policy-options policy-statement PS-EXT-TO-BGP term nhs from prefix-list PL-EXT-TO-BGP
+set policy-options policy-statement PS-EXT-TO-BGP term nhs then next-hop self
+set policy-options policy-statement PS-EXT-TO-BGP term nhs then accept
+
+set protocols bgp group INTERNAL-PEERS export PS-CONN-TO-BGP
+set protocols bgp group INTERNAL-PEERS export PS-EXT-TO-BGP
+
+show route receive-protocol bgp 33.33.33.33
+show route advertising-protocol bgp 24.24.24.24
+
+---
+show route advertising-protocol bgp 24.24.24.24
+
+""",
+"answer" : """show route advertising-protocol bgp 24.24.24.24""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+BGP
+
+show bgp summary
+""",
+"answer" : """show bgp summary""",
+"prompt": "root@vmx1> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+questions_bgp_best_path = [
+{
+"question" : """
+BGP Best Path
+
+1) Local Preference (Highest)
+2) AIGP (Accumulated IGP)
+3) AS_PATH length
+4) Origin (I>E>?)
+5) MED (lowest)
+6) eBGP > iBGP
+7) Best Exit (Lowest IGP Metric)
+8) Current Active Router / Lowest RID
+9) Shortest Cluster Length
+10) Lowest Peer ID
+
+Weight is only for Cisco
+
+----
+
+Criteria that comes after AS_PATH?
+
+""",
+"answer" : """origin""",
+"prompt": ">>> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+
 questions_qinq = [
+{
+"question" : """
+L2 Bridging
+
+802.1q Tag: [<TPID 16-bits(0x8100)><Priority 3-bits><CFI 1-bit><VID 12-bits>]
+
+Functions: Learning, Forwarding, Flooding, Filtering, Aging
+
+C-Tag: (0x88A8)
+S-Tag: (0x8100)
+
+Bridge Domain - a collection of ports that share the same flooding and
+broadcast criteria
+
+Virtual-Switch: Seperate L2 namespace / VLANs, Seperate MAC Tables
+    -Interconnect virtual-switches with IRB interfaces (placed in the master routing table, inet.0)
+    -Interconnect via a physical cable
+
+MVRP - Multiple VLAN Registration Protocol
+---
+pass
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+Basic Bridge Domain on vMX
+
+set bridge-domains client vlan-id 42
+
+set interfaces ge-0/0/4 unit 0 family bridge interface-mode trunk
+set interfaces ge-0/0/4 unit 0 family bridge vlan-id-list 42
+set interfaces ge-0/0/5 unit 0 family bridge interface-mode trunk
+set interfaces ge-0/0/5 unit 0 family bridge vlan-id-list 42
+set interfaces ge-0/0/6 unit 0 family bridge interface-mode access
+set interfaces ge-0/0/6 unit 0 family bridge vlan-id-list 42
+
+show bridge mac-table
+clear bridge mac-table
+show arp interface irb.0
+
+set interfaces irb.0 family inet address 10.10.10.254/24
+set bridge-domains client routing-interface irb.0
+
+""",
+"answer" : """set interfaces irb.0 family inet address 10.10.10.254/24
+set bridge-domains client routing-interface irb.0""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
 {
 "question" : """
 802.1ad | Q-in-Q | Provider Bridge Network
@@ -822,7 +991,7 @@ CE vMX Router:
 show bridge domain
 show bridge mac-table
 
-set bridge-domains data-vlans vlan-id 202
+set bridge-domains ce-vlan vlan-id 202
 
 set interfaces ge-0/0/0 description "TO PE"
 set interfaces ge-0/0/0 unit 0 family bridge interface-mode trunk
@@ -832,9 +1001,13 @@ set interfaces ge-0/0/2 description "Client LAN"
 set interfaces ge-0/0/2 unit 0 family bridge interface-mode access
 set interfaces ge-0/0/2 unit 0 family bridge vlan-id 202
 ---
-set bridge-domains data-vlans vlan-id 202
+set bridge-domains ce-vlan vlan-id 202
+set interfaces ge-0/0/0 unit 0 family bridge interface-mode trunk
+set interfaces ge-0/0/0 unit 0 family bridge vlan-id 202
 """,
-"answer" : """set bridge-domains data-vlans vlan-id 202""",
+"answer" : """set bridge-domains ce-vlan vlan-id 202
+set interfaces ge-0/0/0 unit 0 family bridge interface-mode trunk
+set interfaces ge-0/0/0 unit 0 family bridge vlan-id 202""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -858,8 +1031,11 @@ set interfaces ge-0/0/2 unit 0 family bridge vlan-id 300
 set interfaces ge-0/0/0 description "To CE Router"
 set interfaces ge-0/0/0 unit 0 family bridge interface-mode access
 set interfaces ge-0/0/0 unit 0 family bridge vlan-id 300
+
 ---
+
 set interfaces ge-0/0/2 unit 0 family bridge interface-mode trunk
+
 """,
 "answer" : """set interfaces ge-0/0/2 unit 0 family bridge interface-mode trunk""",
 "prompt": "root@vmx1# ",
@@ -884,6 +1060,7 @@ set interfaces ge-0/0/0 flexible-vlan-tagging
 
 set interfaces ge-0/0/0 unit 0 family bridge interface-mode trunk
 set interfaces ge-0/0/0 unit 0 family bridge vlan-id 300
+
 ---
 set interfaces ge-0/0/0 encapsulation flexible-ethernet-services
 set interfaces ge-0/0/0 flexible-vlan-tagging
@@ -922,7 +1099,8 @@ set interfaces ge-0/0/2 unit 0 family bridge inner-vlan-id-list 200 204
 set interfaces ge-0/0/0 description "To CE Router"
 set interfaces ge-0/0/0 unit 0 family bridge interface-mode access
 set interfaces ge-0/0/0 unit 0 family bridge vlan-id 300
-
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -972,7 +1150,8 @@ set interfaces ge-0/0/2 unit 300 encapsulation vlan-bridge
 set interfaces ge-0/0/2 unit 300 vlan-tags outer 300 inner 200
 
 set bridge-domains kunde1allowedvlans interface ge-0/0/2.300
-
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -996,6 +1175,48 @@ delete interfaces ge-0/0/2 unit 0 family bridge vlan-id 300
 set interfaces ge-0/0/2 unit 0 family bridge vlan-id-list 300
 set interfaces ge-0/0/2 unit 0 family bridge vlan-translate 396 300
 
+---
+set interfaces ge-0/0/2 unit 0 family bridge vlan-translate 396 300
+""",
+"answer" : """set interfaces ge-0/0/2 unit 0 family bridge vlan-translate 396 300""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+}
+]
+
+
+questions_stp = [
+{
+"question" : """
+
+BPUs
+Root elected by lowest priority
+
+STP 802.1d
+ States:
+  Disable, Blocking, Listening
+  Learning, Forwarding
+
+RSTP 802.1w
+ States:
+  Discarding, Learning, Forwarding
+ Introduces Edge Ports
+ Backup Port (Backup Designated Ports)
+ Alternate Port (Backup Root Ports)
+
+VSTP
+ Juniper Proprietary
+ Compatible with PVST+
+
+MSTP
+ Standards Based
+ Map VLANs to instances
+ Regions
+ CST (Common Spanning-Tree) - intermix with none MSTP Bridges
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -1003,16 +1224,392 @@ set interfaces ge-0/0/2 unit 0 family bridge vlan-translate 396 300
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
 },
-# {
-# "question" : """
-# """,
-# "answer" : """""",
-# "prompt": "root@vmx1# ",
-# "clear_screen": True,
-# "suppress_positive_affirmation": False,
-# "post_task_output": """"""
-# },
+{
+"question" : """
+
+Root Protection
+ Prevent unwanted Bridges from becoming Root, place port in blocking
+Loop Protection
+ One way failures, for ports that should never be designated
+ Disable port if it stops receiving BPDUs
+BPDU Protection
+ Shutdown port if it receives BPDUs, for Edge Ports
+---
+pass
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+
+set protocols mstp revision-level 1
+set protocols mstp interface xe-0/0/1
+set protocols mstp interface xe-0/0/2
+set protocols mstp msti 1 vlan 121
+set protocols mstp msti 1 bridge-priority 16k
+set protocols mstp msti 2 vlan 242
+set protocols mstp msti 2 bridge-priority 8k
+
+set bridge-domains client vlan-id-list [ 121 242 ]
+
+show spanning-tree interface
+---
+set protocols mstp msti 1 vlan 121
+set protocols mstp msti 1 bridge-priority 16k
+
+""",
+"answer" : """set protocols mstp msti 1 vlan 121
+set protocols mstp msti 1 bridge-priority 16k""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
 ]
+
+
+questions_mpls = [
+{
+"question" : """
+MPLS
+
+Label (20-bits) | CoS (3-bits) | Stack-bit | TTL (8-bits)
+
+MPLs, LDP, CSPf, SR (SPRING)
+
+inet.3      <--- inet <-> mpls
+mpls.0
+
+MPLS (and RSVP) do not allow fragmentation by default
+
+set interfaces ge-0/0/0 unit 0 family mpls
+set interfaces ge-0/0/1 unit 0 family mpls
+set interfaces lo0 unit 0 family mpls
+
+set protocols mpls interface all
+set protocols mpls interface lo0.0
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+
+Labels:
+  3: implicit Null (PHP)
+  4: explict Null (Retain the label for last hop)
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+Static LSP:
+
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
+
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+
+show mpls static-lsp
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+questions_ldp = [
+{
+"question" : """
+MPLS LDP
+
+No TE
+
+Hellos: 224.0.0.2, UDP 646 -> TCP 646
+Junos only shares Loopback addresses by default!!!
+    (egress policies to advertise other addresses)
+
+set protocols ldp interface ge-0/0/0.0
+set protocols ldp interface lo0.0
+
+show ldp neighbor
+show ldp interface
+show ldp session
+show ldp database session 4.4.4.4
+traceroute mpls ldp 4.4.4.4
+---
+set protocols ldp interface ge-0/0/0.0
+set protocols ldp interface lo0.0
+
+""",
+"answer" : """set protocols ldp interface ge-0/0/0.0
+set protocols ldp interface lo0.0""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+questions_rsvp = [
+{
+"question" : """
+MPLS RSVP
+
+Route Preference: 7 (vs LDP RP of 9)
+Uses extensions in the IGP (OSPF / IS-IS)
+Can be bound to BFD
+Protocol 46
+
+Define ingress and egress routers, RSVP will create a unidirectional path
+
+PATH Object (Ingress -downstream-> Egress)
+    RRO: Resource Record Object, list of routers transversed
+         Origin reachability is verified by the egress router
+         Loop Detection
+    Refreshed every 30 seconds, PathTear (ingress to egress)
+    ERO: (Explicit Route Object)
+         Configure on Ingress Router
+         Define path to take
+         Strict | Loose
+            Loose: go towards an IP address
+            Strict: define the next-hop (no choice)
+         PATHERR: requirements cannot be satisfied
+
+
+RESV Object (Egress -upstream-> Ingress)
+
+    ResvTear (egress to ingress)
+
+
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS RSVP
+
+# Turn off CSPF (if needed)
+set protocols mpls no-cspf
+
+set protocols rsvp interface ae0.0
+set protocols rsvp interface lo0.0
+
+# Follow the IGP
+set protocols mpls label-switched-path MyRSVP1 to 6.6.6.6
+
+# Create an ERO
+set protocols mpls path via-PE-55 10.44.55.55 strict
+set protocols mpls path via-PE-55 10.55.66.55 loose
+
+# Tie some stuff together :)
+set protocols mpls label-switched-path MyRSVP1 primary via-PE-55
+set protocols mpls label-switched-path MyRSVP1 bandwidth 100m
+
+# Create an automatic return path; CSPF must be enabled
+set mpls label-switched-path MyRSVP1 corouted-bidirectional
+
+# RSVP authentication
+set protocols rsvp interface xe-0/0/0.0 authentication-key cisco123
+
+# Ultimate Hop Pop
+set mpls label-switched-path MyRSVP1 ultimate-hop-popping
+
+# Enable BFD (be wary of this one in the lab)
+set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection minimum-interval 50
+set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection multiplier 3
+set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection failure-action <[make-before-break | teardown]>
+
+# MTU Path discovery and Fragmentation
+set protocols mpls path-mtu allow-fragmentation
+set protocols mpls path-mtu rsvp mtu-signaling
+
+# Manually reset all RSVP sessions; good for labs
+clear rsvp session all
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS RSVP
+
+Validation:
+
+show mpls lsp
+    ActivePath: ERO
+    LSPName: LSP
+
+show rsvp session
+show rsvp interface
+show mpls lsp ingress name MyRSVP1 extensive
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+questions_cspf = [
+{
+"question" : """
+MPLS CSPF
+
+CSPF: define constraints and the IGP creates the EROs
+
+OSPF:  Opaque LSAs (Type-10)
+    Within the area, but expandable with extra commands
+IS-IS: TLVs
+    Within level 1
+
+TED: Traffic Engineering Database
+    Bandwidth Reservations
+    Admin-Groups
+    State Info
+    SLA Info
+
+# Turn on Type-10 LSAs
+set protocols ospf traffic-engineering
+
+show ted database [extensive]
+show ted database 1.1.1.1
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS CSPF
+
+1.) Prune non-qualifying paths
+2.) Calculate SPF based on pruned tree
+
+Tie-Breaking for Equal Cost Paths Options:
+    A) Random
+    B) Least-Fill (Path with the least reserved BW, based on !!!percent!!!)
+    C) Most-Fill (Path with the most reserved BW)
+
+set protocols label-switched-path MyRSVP1 most-fill
+set protocols label-switched-path MyRSVP1 least-fill
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS CSPF
+
+Admin Groups (colors)
+    32-bit value
+    Each bit has a color / name
+    Used to label interfaces
+
+set protocols mpls admin-groups puce 31
+set protocols mpls admin-groups or 0
+set protocols mpls admin-groups argent 1
+set protocols mpls admin-groups <NAME> <0..31>
+
+set protocols mpls label-switched-path MyRSVP1 admin-group ?
+    exclude
+    include-all
+    include-any
+
+set protocols mpls label-switched-path MyRSVP1 admin-group exclude argent
+set protocols mpls label-switched-path MyRSVP1 admin-group include-any [ puce or ]
+
+set protocols mpls interface xe-0/0/1.0 admin-group [ puce purple ]
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS CSPF
+
+Bidirectional LSPs (does not work on vMX)
+
+set protocols mpls label-switched-path MyRSVP1 corouted-bidirectional
+
+# Bidirectional Performance
+set protocols mpls statistics traffic-class-statistics
+set protocols mpls label-switched-path MyRSVP1 ultimate-hop-popping
+set protocols mpls label-switched-path MyRSVP1 associate-lsp MyRSVP1-Return-lsp
+set protocols mpls label-switched-path MyRSVP1 oam mpls-tp-mode
+set protocols mpls label-switched-path MyRSVP1 oam performance-monitoring querier loss-delay traffic-class tc-0 query-interval 1000
+
+# The other side
+set protocols mpls statistics traffic-class-statistics
+set protocols mpls label-switched-path MyRSVP1-Return-lsp ultimate-hop-popping
+set protocols mpls label-switched-path MyRSVP1-Return-lsp associate-lsp MyRSVP1
+set protocols mpls label-switched-path MyRSVP1-Return-lsp oam mpls-tp-mode
+set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder loss min-query-interval 1000
+set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder delay min-query-interval 1000
+
+# Verify
+show performance-monitoring mpls lsp
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
 
 questions_lacp = [
 {
@@ -1342,413 +1939,6 @@ set interfaces ae0 aggregated-ether-options mc-ae status-control active
 # Other Side
 set interfaces ae0 aggregated-ether-options mc-ae status-control standby
 
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_stp = [
-{
-"question" : """
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-
-questions_mpls = [
-{
-"question" : """
-MPLS
-
-Label (20-bits) | CoS (3-bits) | Stack-bit | TTL (8-bits)
-
-inet.3      <--- inet <-> mpls
-mpls.0
-
-MPLS (and RSVP) do not allow fragmentation by default
-
-set interfaces ge-0/0/0 unit 0 family mpls
-set interfaces ge-0/0/1 unit 0 family mpls
-set interfaces lo0 unit 0 family mpls
-
-set protocols mpls interface all
-set protocols mpls interface lo0.0
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS
-Static LSP:
-
-# Ingress Router
-set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
-set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
-set protocols mpls static-label-switched-path ToBunny ingress push 1000002
-
-set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
-
-# Transit Router
-set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
-set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
-
-# PHP Router
-set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
-set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
-
-show mpls static-lsp
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_ldp = [
-{
-"question" : """
-MPLS LDP
-
-No TE
-
-Hellos: 224.0.0.2, UDP 646 -> TCP 646
-Junos only shares Loopback addresses by default!!!
-
-set protocols ldp interface ge-0/0/0.0
-set protocols ldp interface lo0.0
-
-show ldp neighbor
-show ldp interface
-show ldp session
-show ldp database session 4.4.4.4
-traceroute mpls ldp 4.4.4.4
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_rsvp = [
-{
-"question" : """
-MPLS RSVP
-
-Route Preference: 7 (vs LDP RP of 9)
-Uses extensions in the IGP (OSPF / IS-IS)
-Can be bound to BFD
-
-Define ingress and egress routers, RSVP will create a unidirectional path
-
-PATH Object (Ingress -downstream-> Egress)
-    RRO: Resource Record Object, list of routers transversed
-         Origin reachability is verified by the egress router
-         Loop Detection
-    Refreshed every 30 seconds, PathTear (ingress to egress)
-    ERO: (Explicit Route Object)
-         Configure on Ingress Router
-         Define path to take
-         Strict | Loose
-            Loose: go towards an IP address
-            Strict: define the next-hop (no choice)
-         PATHERR: requirements cannot be satisfied
-
-
-RESV Object (Egress -upstream-> Ingress)
-
-    ResvTear (egress to ingress)
-
-
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS RSVP
-
-# Turn off CSPF (if needed)
-set protocols mpls no-cspf
-
-set protocols rsvp interface ae0.0
-set protocols rsvp interface lo0.0
-
-# Follow the IGP
-set protocols mpls label-switched-path MyRSVP1 to 6.6.6.6
-
-# Create an ERO
-set protocols mpls path via-PE-55 10.44.55.55 strict
-set protocols mpls path via-PE-55 10.55.66.55 loose
-
-# Tie some stuff together :)
-set protocols mpls label-switched-path MyRSVP1 primary via-PE-55
-set protocols mpls label-switched-path MyRSVP1 bandwidth 100m
-
-# Create an automatic return path; CSPF must be enabled
-set mpls label-switched-path MyRSVP1 corouted-bidirectional
-
-# RSVP authentication
-set protocols rsvp interface xe-0/0/0.0 authentication-key cisco123
-
-# Ultimate Hop Pop
-set mpls label-switched-path MyRSVP1 ultimate-hop-popping
-
-# Enable BFD (be wary of this one in the lab)
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection minimum-interval 50
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection multiplier 3
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection failure-action <[make-before-break | teardown]>
-
-# MTU Path discovery and Fragmentation
-set protocols mpls path-mtu allow-fragmentation
-set protocols mpls path-mtu rsvp mtu-signaling
-
-# Manually reset all RSVP sessions; good for labs
-clear rsvp session all
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS RSVP
-
-Validation:
-
-show mpls lsp
-    ActivePath: ERO
-    LSPName: LSP
-
-show rsvp session
-show rsvp interface
-show mpls lsp ingress name MyRSVP1 extensive
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_cspf = [
-{
-"question" : """
-MPLS CSPF
-
-CSPF: define constraints and the IGP creates the EROs
-
-OSPF:  Opaque LSAs (Type-10)
-    Within the area, but expandable with extra commands
-IS-IS: TLVs
-    Within level 1
-
-TED: Traffic Engineering Database
-    Bandwidth Reservations
-    Admin-Groups
-    State Info
-    SLA Info
-
-# Turn on Type-10 LSAs
-set protocols ospf traffic-engineering
-
-show ted database [extensive]
-show ted database 1.1.1.1
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS CSPF
-
-1.) Prune non-qualifying paths
-2.) Calculate SPF based on pruned tree
-
-Tie-Breaking for Equal Cost Paths Options:
-    A) Random
-    B) Least-Fill (Path with the least reserved BW, based on !!!percent!!!)
-    C) Most-Fill (Path with the most reserved BW)
-
-set protocols label-switched-path MyRSVP1 most-fill
-set protocols label-switched-path MyRSVP1 least-fill
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS CSPF
-
-Admin Groups (colors)
-    32-bit value
-    Each bit has a color / name
-    Used to label interfaces
-
-set protocols mpls admin-groups puce 31
-set protocols mpls admin-groups or 0
-set protocols mpls admin-groups argent 1
-set protocols mpls admin-groups <NAME> <0..31>
-
-set protocols mpls label-switched-path MyRSVP1 admin-group ?
-    exclude
-    include-all
-    include-any
-
-set protocols mpls label-switched-path MyRSVP1 admin-group exclude argent
-set protocols mpls label-switched-path MyRSVP1 admin-group include-any [ puce or ]
-
-set protocols mpls interface xe-0/0/1.0 admin-group [ puce purple ]
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-MPLS CSPF
-
-Bidirectional LSPs (does not work on vMX)
-
-set protocols mpls label-switched-path MyRSVP1 corouted-bidirectional
-
-# Bidirectional Performance
-set protocols mpls statistics traffic-class-statistics
-set protocols mpls label-switched-path MyRSVP1 ultimate-hop-popping
-set protocols mpls label-switched-path MyRSVP1 associate-lsp MyRSVP1-Return-lsp
-set protocols mpls label-switched-path MyRSVP1 oam mpls-tp-mode
-set protocols mpls label-switched-path MyRSVP1 oam performance-monitoring querier loss-delay traffic-class tc-0 query-interval 1000
-
-# The other side
-set protocols mpls statistics traffic-class-statistics
-set protocols mpls label-switched-path MyRSVP1-Return-lsp ultimate-hop-popping
-set protocols mpls label-switched-path MyRSVP1-Return-lsp associate-lsp MyRSVP1
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam mpls-tp-mode
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder loss min-query-interval 1000
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder delay min-query-interval 1000
-
-# Verify
-show performance-monitoring mpls lsp
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_bgp = [
-{
-"question" : """
-BGP
-
-TCP 179
-
-set routing-options autonomous-system 42
-set routing-options router-id 24.24.24.24
-set protocols bgp group EXTERNAL-PEERS peer-as 65001
-set protocols bgp group EXTERNAL-PEERS type external
-set protocols bgp group EXTERNAL-PEERS local-as 42
-set protocols bgp group EXTERNAL-PEERS local-address 42.65.42.42
-set protocols bgp group EXTERNAL-PEERS neighbor 42.65.42.65
-set protocols bgp group INTERNAL-PEERS type internal
-set protocols bgp group INTERNAL-PEERS peer-as 42
-set protocols bgp group INTERNAL-PEERS local-address 24.24.24.24
-set protocols bgp group INTERNAL-PEERS neighbor 33.33.33.33
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-BGP
-
-set policy-options policy-statement PS-CONN-TO-BGP term 10 from protocol direct
-set policy-options policy-statement PS-CONN-TO-BGP term 10 from route-filter 33.33.33.33/32 exact
-set policy-options policy-statement PS-CONN-TO-BGP term 10 then accept
-
-set policy-options policy-statement PS-EXT-TO-BGP term nhs from protocol bgp
-set policy-options policy-statement PS-EXT-TO-BGP term nhs from route-type external
-set policy-options policy-statement PS-EXT-TO-BGP term nhs from prefix-list PL-EXT-TO-BGP
-set policy-options policy-statement PS-EXT-TO-BGP term nhs then next-hop self
-set policy-options policy-statement PS-EXT-TO-BGP term nhs then accept
-
-set protocols bgp group INTERNAL-PEERS export PS-CONN-TO-BGP
-set protocols bgp group INTERNAL-PEERS export PS-EXT-TO-BGP
-
-show route receive-protocol bgp 33.33.33.33
-show route advertising-protocol bgp 24.24.24.24
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-BGP
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_bgp_best_path = [
-{
-"question" : """
-BGP Best Path
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",

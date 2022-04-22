@@ -74,11 +74,69 @@ IRB
 Provider bridging
 
 # STP
+Identify the concepts, benefits, operation, or functionality of Spanning Tree Protocol and its variants
+
+STP, RSTP, MSTP and VSTP concepts
+ Port roles and states
+ BPDUs
+ Convergence and reconvergence
+ Spanning-tree security
+Demonstrate knowledge of how to configure, monitor, or troubleshoot STP and its variants
+ Spanning-tree protocols: STP, RSTP, MSTP, and VSTP
+ BPDU, loop, and root protection
 
 # MPLS
+Identify the concepts, operation, or functionality of MPLS
+
+ MPLS terminology
+ MPLS packet header
+ End-to-end packet flow and forwarding
+ Labels and the label information base
+ MPLS and routing tables
+ RSVP
+ LDP
+Demonstrate knowledge of how to configure, monitor, or troubleshoot MPLS
+
+ MPLS forwarding
+ RSVP-signaled and LDP-signaled LSPs
 
 # IPv6
+Identify the concepts, operation, or functionality of IPv6
+
+ IPv4 versus IPv6
+ Address types, notation, and format
+ Address scopes
+ Autoconfiguration
+ Tunneling
+Demonstrate knowledge of how to configure, monitor, or troubleshooting IPv6
+
+ Interfaces
+ Static routes
+ Dynamic routing: OSPFv3, IS-IS, and BGP
+ IPv6 over IPv4 tunneling
 
 # Tunnels
+Identify the concepts, requirements, or functionality of IP tunneling
+ Tunneling applications and considerations
+ GRE
+ IP-IP
+Demonstrate knowledge of how to configure, monitor, or troubleshoot IP tunnels
+ GRE
+ IP-IP
 
 # HA
+Identify the concepts, benefits, applications, or requirements of high availability
+ Link aggregation groups (LAG) and multichassis LAGs (MC-LAGs)
+ Graceful restart (GR)
+ Graceful Routing Engine switchover (GRES)
+ Nonstop bridging (NSB)
+ Nonstop active routing (NSR)
+ Bidirectional Forwarding Detection (BFD)
+ Virtual Router Redundancy Protocol (VRRP)
+ Unified In-Service Software Upgrade (ISSU)
+ 
+Demonstrate knowledge of how to configure, monitor, or troubleshoot high availability components
+ LAG, MC-LAG
+ GR, GRES, NSB, and NSR
+ VRRP
+ ISSU
