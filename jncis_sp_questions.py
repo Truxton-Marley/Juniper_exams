@@ -2,15 +2,15 @@
 # 2. advanced routing / Protocol Independent Routing
 # 3. ospf
 # 4. isis
-# 5. qinq
-# 6. lacp
-# 7. mc-lag
-# 8. stp
-# 9. mpls 101
-# 10. LDP / RSVP
+# 5. bgp
+# 6. qinq
+# 7. stp
+# 8. mpls
+# 9. ldp
+# 10. rsvp
 # 11. CSPF
-# 12. BGP
-# 13. Best Path
+# 12. lacp
+# 13. mc-lag
 # 14. Tunneling
 # 15. Chassis HA
 # 16. IPv6
@@ -1190,8 +1190,11 @@ set interfaces ge-0/0/2 unit 0 family bridge vlan-translate 396 300
 questions_stp = [
 {
 "question" : """
+#########
+###STP###
+#########
 
-BPUs
+BPDUs
 Root elected by lowest priority
 
 STP 802.1d
@@ -1280,10 +1283,18 @@ MPLS
 
 Label (20-bits) | CoS (3-bits) | Stack-bit | TTL (8-bits)
 
-MPLs, LDP, CSPf, SR (SPRING)
+MPLs, LDP, CSPF, SR (SPRING)
 
 inet.3      <--- inet <-> mpls
 mpls.0
+
+inet.3 populated by
+    LDP, RP 9
+    RSVP, RP 7
+    Knobs:
+        bgp-igp: move routes from inet.3 to inet.0
+        bgp-igp-both-rbis: copy routes from inet.3 to inet.0
+        mpls-forwarding: complicated
 
 MPLS (and RSVP) do not allow fragmentation by default
 
@@ -1293,9 +1304,13 @@ set interfaces lo0 unit 0 family mpls
 
 set protocols mpls interface all
 set protocols mpls interface lo0.0
+---
 
+set interfaces lo0 unit 0 family mpls
+set protocols mpls interface lo0.0
 """,
-"answer" : """""",
+"answer" : """set interfaces lo0 unit 0 family mpls
+set protocols mpls interface lo0.0""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1306,11 +1321,13 @@ set protocols mpls interface lo0.0
 MPLS
 
 Labels:
-  3: implicit Null (PHP)
-  4: explict Null (Retain the label for last hop)
+  3: Implicit Null (PHP)
+  4: Explict Null (Retain the label for last hop)
+
+Label for Implicit Null?
 
 """,
-"answer" : """""",
+"answer" : """3""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1337,14 +1354,15 @@ set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
 set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
 
 show mpls static-lsp
-
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
-},
+}
 ]
 
 questions_ldp = [
@@ -1357,6 +1375,8 @@ No TE
 Hellos: 224.0.0.2, UDP 646 -> TCP 646
 Junos only shares Loopback addresses by default!!!
     (egress policies to advertise other addresses)
+
+LFA - Route Free Alternates (kinda like an LDP equivalent of Fast Reroute in RSVP)
 
 set protocols ldp interface ge-0/0/0.0
 set protocols ldp interface lo0.0
@@ -1389,6 +1409,8 @@ Route Preference: 7 (vs LDP RP of 9)
 Uses extensions in the IGP (OSPF / IS-IS)
 Can be bound to BFD
 Protocol 46
+Tear = Same Direction
+Err = Opposite Direction
 
 Define ingress and egress routers, RSVP will create a unidirectional path
 
@@ -1403,15 +1425,23 @@ PATH Object (Ingress -downstream-> Egress)
          Strict | Loose
             Loose: go towards an IP address
             Strict: define the next-hop (no choice)
-         PATHERR: requirements cannot be satisfied
-
+         PATHERR: requirements cannot be satisfied (egress to ingress)
+    Label Request: request a label to be allocated
+    T-Spec: Request that BW resources be allocated
 
 RESV Object (Egress -upstream-> Ingress)
-
+    Label
+    Style (FF/SE):
+        Fix Filter
+        Shared Explicit
     ResvTear (egress to ingress)
 
-
-
+Both PATH and RESV
+    Session
+    RRO
+    RSVP-HOP: notes the previous router to have processed the packet
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -1460,9 +1490,11 @@ set protocols mpls path-mtu rsvp mtu-signaling
 
 # Manually reset all RSVP sessions; good for labs
 clear rsvp session all
+---
 
+set protocols rsvp interface ae0.0
 """,
-"answer" : """""",
+"answer" : """set protocols rsvp interface ae0.0""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1489,7 +1521,49 @@ show mpls lsp ingress name MyRSVP1 extensive
 "suppress_positive_affirmation": False,
 "post_task_output": """"""
 },
+{
+"question" : """
+MPLS
+
+SRLG - Shared Resource Link Group
+
+Make RSVP L1 and L2 aware
+
+Tag links to notify that they share "fate"
+---
+pass
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+
+Fast Reroute
+
+Temporary reroute traffic while CSPF finds new route or primary to secondary failover
+
+FRR detour
+    Consumes a lot of state
+
+FRR link and link node protection / facility protection
+    Scales better
+
+---
+pass
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+}
 ]
+
 
 questions_cspf = [
 {
@@ -1509,14 +1583,15 @@ TED: Traffic Engineering Database
     State Info
     SLA Info
 
-# Turn on Type-10 LSAs
+# Turn on Type-10 LSAs (on by default in ISIS)
 set protocols ospf traffic-engineering
 
 show ted database [extensive]
 show ted database 1.1.1.1
-
+---
+set protocols ospf traffic-engineering
 """,
-"answer" : """""",
+"answer" : """set protocols ospf traffic-engineering""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1536,9 +1611,10 @@ Tie-Breaking for Equal Cost Paths Options:
 
 set protocols label-switched-path MyRSVP1 most-fill
 set protocols label-switched-path MyRSVP1 least-fill
-
+---
+set protocols label-switched-path MyRSVP1 most-fill
 """,
-"answer" : """""",
+"answer" : """set protocols label-switched-path MyRSVP1 most-fill""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1547,6 +1623,11 @@ set protocols label-switched-path MyRSVP1 least-fill
 {
 "question" : """
 MPLS CSPF
+
+Different paths for different traffic types
+Also good for taking a link down for maintenance
+
+*Extended Admin Groups if more than 32 values are needed
 
 Admin Groups (colors)
     32-bit value
@@ -1567,9 +1648,10 @@ set protocols mpls label-switched-path MyRSVP1 admin-group exclude argent
 set protocols mpls label-switched-path MyRSVP1 admin-group include-any [ puce or ]
 
 set protocols mpls interface xe-0/0/1.0 admin-group [ puce purple ]
-
+---
+set protocols mpls admin-groups puce 31
 """,
-"answer" : """""",
+"answer" : """set protocols mpls admin-groups puce 31""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1600,7 +1682,8 @@ set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monito
 
 # Verify
 show performance-monitoring mpls lsp
-
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -1625,11 +1708,11 @@ Up to 8 uplinks on most platforms
 
 LACP: Active | Passive
 
+# Create a single "ae" interface, ae0:
 set chassis aggregated-devices ethernet device-count 1
-    + creates a single "ae" interface, ae0
 
 """,
-"answer" : """""",
+"answer" : """set chassis aggregated-devices ethernet device-count 1""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1662,12 +1745,13 @@ set interfaces ae0 aggregated-ether-options lacp periodic <[fast | slow]>
 
 # Set ae0 to be a trunk port:
 set interfaces ae0 unit 0 family ethernet-switching port-mode trunk
+---
 
 # Verify
 show lacp interfaces
 
 """,
-"answer" : """""",
+"answer" : """show lacp interfaces""",
 "prompt": "root@vEX# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1685,33 +1769,6 @@ show lacp interfaces
 "question" : """
 LACP | 802.3ad | 802.1ax
 
-QFC-Switch
-
-set chassis aggregated-devices ethernet device-count 1
-
-set interfaces xe-0/0/0 gigether-options 803.ad ae0
-set interfaces xe-0/0/1 gigether-options 803.ad ae0
-
-set interfaces ae0 aggregated-ether-options lacp active
-
-# Set ae0 to be a trunk port:
-set interfaces ae0 unit 0 family ethernet-switching interface-mode trunk
-set interfaces ae0 unit 0 family ethernet-switching vlan members all
-
-# Verify
-show lacp interfaces
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-LACP | 802.3ad | 802.1ax
-
 MX-Router
 
 set chassis aggregated-devices ethernet device-count 1
@@ -1721,12 +1778,17 @@ set interfaces ge-0/0/4 ether-options 802.3ad ae0
 
 set interfaces ae0 aggregated-ethernet-options lacp active
 
-set interface ae0 unit 0 family bridge vlan-id-list 300
-
 show lacp interfaces
+---
+
+set interfaces xe-0/0/0 gigether-options 802.3ad ae0
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast
 
 """,
-"answer" : """""",
+"answer" : """set interfaces xe-0/0/0 gigether-options 802.3ad ae0
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,

@@ -11,4 +11,5 @@ Currently working on the JNCIS-SP CERTIFICATION PREPARATION course on learningpo
 Sources:
  learningportal.juniper.net
  cbtnuggets.com
+ networkfuntimes.com
  Lots of random Internet advice

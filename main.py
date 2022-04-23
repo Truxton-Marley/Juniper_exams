@@ -16,13 +16,17 @@ juniper_jncis_sp = [
     jncis_sp_questions.questions_stp,
     jncis_sp_questions.questions_mpls,
     jncis_sp_questions.questions_ldp,
+    jncis_sp_questions.questions_rsvp,
+    jncis_sp_questions.questions_cspf,
     jncis_sp_questions.questions_lacp,
 ]
 
-# clear_screen_slowly(wait=2)
-# ask_questions(juniper_jncis_sp[6])
-# clear_screen_slowly(wait=2)
-# ask_questions(juniper_jncis_sp[5])
+clear_screen_slowly(wait=2)
+ask_questions(juniper_jncis_sp[11])
+clear_screen_slowly(wait=2)
+ask_questions(juniper_jncis_sp[10])
+clear_screen_slowly(wait=2)
+ask_questions(juniper_jncis_sp[9])
 for i in range(4):
     clear_screen_slowly(wait=2)
     random_index = random.randint(0, len(juniper_jncis_sp) - 1)
