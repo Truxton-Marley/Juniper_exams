@@ -102,14 +102,13 @@ Demonstrate knowledge of how to configure, monitor, or troubleshoot MPLS
 
 # IPv6
 Identify the concepts, operation, or functionality of IPv6
-
  IPv4 versus IPv6
  Address types, notation, and format
  Address scopes
  Autoconfiguration
  Tunneling
-Demonstrate knowledge of how to configure, monitor, or troubleshooting IPv6
 
+Demonstrate knowledge of how to configure, monitor, or troubleshooting IPv6
  Interfaces
  Static routes
  Dynamic routing: OSPFv3, IS-IS, and BGP
@@ -120,6 +119,7 @@ Identify the concepts, requirements, or functionality of IP tunneling
  Tunneling applications and considerations
  GRE
  IP-IP
+ 
 Demonstrate knowledge of how to configure, monitor, or troubleshoot IP tunnels
  GRE
  IP-IP
@@ -134,9 +134,10 @@ Identify the concepts, benefits, applications, or requirements of high availabil
  Bidirectional Forwarding Detection (BFD)
  Virtual Router Redundancy Protocol (VRRP)
  Unified In-Service Software Upgrade (ISSU)
- 
+
 Demonstrate knowledge of how to configure, monitor, or troubleshoot high availability components
  LAG, MC-LAG
  GR, GRES, NSB, and NSR
  VRRP
  ISSU
+ 

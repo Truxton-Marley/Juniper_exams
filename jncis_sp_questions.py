@@ -9,12 +9,14 @@
 # 9. ldp
 # 10. rsvp
 # 11. CSPF
-# 12. lacp
-# 13. mc-lag
-# 14. Tunneling
-# 15. Chassis HA
-# 16. IPv6
+# 12. IPv6
+# 13. Tunneling
+# 14. lacp
+# 15. mc-lag
+# 16. Chassis HA
 
+
+# 1. Extras (Logical Instances)
 questions_extras = [
 {
 "question" : """
@@ -122,9 +124,24 @@ R2 {
 }
 """
 },
+{
+"question" : """
+Rearranging Policy-Statements:
+
+insert protocols bgp group ebgp export foo before bar
+
+""",
+"answer" : """insert protocols bgp group ebgp export foo before bar""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """
+"""
+}
 ]
 
 
+# 2. advanced routing / Protocol Independent Routing
 questions_pir = [
 {
 "question" : """
@@ -1460,29 +1477,29 @@ set protocols rsvp interface ae0.0
 set protocols rsvp interface lo0.0
 
 # Follow the IGP
-set protocols mpls label-switched-path MyRSVP1 to 6.6.6.6
+set protocols mpls label-switched-path lsp1 to 6.6.6.6
 
 # Create an ERO
 set protocols mpls path via-PE-55 10.44.55.55 strict
 set protocols mpls path via-PE-55 10.55.66.55 loose
 
 # Tie some stuff together :)
-set protocols mpls label-switched-path MyRSVP1 primary via-PE-55
-set protocols mpls label-switched-path MyRSVP1 bandwidth 100m
+set protocols mpls label-switched-path lsp1 primary via-PE-55
+set protocols mpls label-switched-path lsp1 bandwidth 100m
 
 # Create an automatic return path; CSPF must be enabled
-set mpls label-switched-path MyRSVP1 corouted-bidirectional
+set mpls label-switched-path lsp1 corouted-bidirectional
 
 # RSVP authentication
 set protocols rsvp interface xe-0/0/0.0 authentication-key cisco123
 
 # Ultimate Hop Pop
-set mpls label-switched-path MyRSVP1 ultimate-hop-popping
+set mpls label-switched-path lsp1 ultimate-hop-popping
 
 # Enable BFD (be wary of this one in the lab)
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection minimum-interval 50
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection multiplier 3
-set mpls label-switched-path MyRSVP1 oam bfd-liveness-detection failure-action <[make-before-break | teardown]>
+set mpls label-switched-path lsp1 oam bfd-liveness-detection minimum-interval 50
+set mpls label-switched-path lsp1 oam bfd-liveness-detection multiplier 3
+set mpls label-switched-path lsp1 oam bfd-liveness-detection failure-action <[make-before-break | teardown]>
 
 # MTU Path discovery and Fragmentation
 set protocols mpls path-mtu allow-fragmentation
@@ -1504,6 +1521,20 @@ set protocols rsvp interface ae0.0
 "question" : """
 MPLS RSVP
 
+# Follow the IGP
+set protocols mpls label-switched-path lsp1 to 6.6.6.6
+
+""",
+"answer" : """set protocols mpls label-switched-path lsp1 to 6.6.6.6""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS RSVP
+
 Validation:
 
 show mpls lsp
@@ -1512,8 +1543,9 @@ show mpls lsp
 
 show rsvp session
 show rsvp interface
-show mpls lsp ingress name MyRSVP1 extensive
-
+show mpls lsp ingress name lsp1 extensive
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -1565,6 +1597,7 @@ pass
 ]
 
 
+# 11. CSPF
 questions_cspf = [
 {
 "question" : """
@@ -1609,12 +1642,14 @@ Tie-Breaking for Equal Cost Paths Options:
     B) Least-Fill (Path with the least reserved BW, based on !!!percent!!!)
     C) Most-Fill (Path with the most reserved BW)
 
-set protocols label-switched-path MyRSVP1 most-fill
-set protocols label-switched-path MyRSVP1 least-fill
+set protocols label-switched-path lsp1 most-fill
+set protocols label-switched-path lsp1 least-fill
 ---
-set protocols label-switched-path MyRSVP1 most-fill
+
+set protocols label-switched-path lsp1 most-fill
+
 """,
-"answer" : """set protocols label-switched-path MyRSVP1 most-fill""",
+"answer" : """set protocols label-switched-path lsp1 most-fill""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1622,7 +1657,9 @@ set protocols label-switched-path MyRSVP1 most-fill
 },
 {
 "question" : """
-MPLS CSPF
+############################
+## MPLS CSPF Admin Groups ##
+############################
 
 Different paths for different traffic types
 Also good for taking a link down for maintenance
@@ -1639,19 +1676,65 @@ set protocols mpls admin-groups or 0
 set protocols mpls admin-groups argent 1
 set protocols mpls admin-groups <NAME> <0..31>
 
-set protocols mpls label-switched-path MyRSVP1 admin-group ?
+set protocols mpls label-switched-path lsp1 admin-group ?
     exclude
     include-all
     include-any
 
-set protocols mpls label-switched-path MyRSVP1 admin-group exclude argent
-set protocols mpls label-switched-path MyRSVP1 admin-group include-any [ puce or ]
+set protocols mpls label-switched-path lsp1 admin-group exclude argent
+set protocols mpls label-switched-path lsp1 admin-group include-any [ puce or ]
 
 set protocols mpls interface xe-0/0/1.0 admin-group [ puce purple ]
 ---
 set protocols mpls admin-groups puce 31
+set protocols mpls interface xe-0/0/1.0 admin-group puce
 """,
-"answer" : """set protocols mpls admin-groups puce 31""",
+"answer" : """set protocols mpls admin-groups puce 31
+set protocols mpls interface xe-0/0/1.0 admin-group puce""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS CSPF
+
+set protocols mpls label-switched-path lsp1 admin-group ?
+    exclude
+    include-all
+    include-any
+
+set protocols mpls label-switched-path lsp1 admin-group exclude argent
+set protocols mpls label-switched-path lsp1 admin-group include-any [ puce or ]
+
+---
+set protocols mpls label-switched-path lsp1 admin-group exclude puce
+""",
+"answer" : """set protocols mpls label-switched-path lsp1 admin-group exclude puce""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS RSVP / CSPF
+
+# Follow the IGP
+set protocols mpls label-switched-path lsp1-pri
+set protocols mpls label-switched-path lsp1-sec
+
+set protocols mpls label-switched-path lsp1 primary lsp1-pri
+set protocols mpls label-switched-path lsp1 secondary lsp1-sec standby
+---
+
+set protocols mpls label-switched-path lsp1 primary lsp1-pri
+set protocols mpls label-switched-path lsp1 secondary lsp1-sec standby
+
+""",
+"answer" : """set protocols mpls label-switched-path lsp1 primary lsp1-pri
+set protocols mpls label-switched-path lsp1 secondary lsp1-sec standby""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -1663,22 +1746,22 @@ MPLS CSPF
 
 Bidirectional LSPs (does not work on vMX)
 
-set protocols mpls label-switched-path MyRSVP1 corouted-bidirectional
+set protocols mpls label-switched-path lsp1 corouted-bidirectional
 
 # Bidirectional Performance
 set protocols mpls statistics traffic-class-statistics
-set protocols mpls label-switched-path MyRSVP1 ultimate-hop-popping
-set protocols mpls label-switched-path MyRSVP1 associate-lsp MyRSVP1-Return-lsp
-set protocols mpls label-switched-path MyRSVP1 oam mpls-tp-mode
-set protocols mpls label-switched-path MyRSVP1 oam performance-monitoring querier loss-delay traffic-class tc-0 query-interval 1000
+set protocols mpls label-switched-path lsp1 ultimate-hop-popping
+set protocols mpls label-switched-path lsp1 associate-lsp lsp1-Return-lsp
+set protocols mpls label-switched-path lsp1 oam mpls-tp-mode
+set protocols mpls label-switched-path lsp1 oam performance-monitoring querier loss-delay traffic-class tc-0 query-interval 1000
 
 # The other side
 set protocols mpls statistics traffic-class-statistics
-set protocols mpls label-switched-path MyRSVP1-Return-lsp ultimate-hop-popping
-set protocols mpls label-switched-path MyRSVP1-Return-lsp associate-lsp MyRSVP1
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam mpls-tp-mode
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder loss min-query-interval 1000
-set protocols mpls label-switched-path MyRSVP1-Return-lsp oam performance-monitoring responder delay min-query-interval 1000
+set protocols mpls label-switched-path lsp1-Return-lsp ultimate-hop-popping
+set protocols mpls label-switched-path lsp1-Return-lsp associate-lsp lsp1
+set protocols mpls label-switched-path lsp1-Return-lsp oam mpls-tp-mode
+set protocols mpls label-switched-path lsp1-Return-lsp oam performance-monitoring responder loss min-query-interval 1000
+set protocols mpls label-switched-path lsp1-Return-lsp oam performance-monitoring responder delay min-query-interval 1000
 
 # Verify
 show performance-monitoring mpls lsp
@@ -1693,6 +1776,206 @@ pass
 },
 ]
 
+
+questions_ipv6 = [
+{
+"question" : """
+##########
+###IPv6###
+##########
+
+FF00::/8 - Multicast
+FE80::/10 - Link Local
+FC00::/7 - ULA (Unique Local Addressing)
+
+SLAAC - Stateless Address Auto Config
+    -ICMP NDP Neighbor Discovery Protocol
+    -RS, RA (GUA: Globally Unique Address)
+    -EUI-64 -> PE (Privacy Extensions)
+
+---
+show ipv6 neighbors
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """root@SP-LAB:R3> show ipv6 neighbors
+IPv6 Address                 Linklayer Address  State       Exp Rtr Secure Interface
+2001:db8:2:13::1             2c:6b:f5:00:4f:00  stale       1185 yes no     lt-0/0/0.31
+2001:db8:2:23::2             2c:6b:f5:00:4f:00  stale       1142 yes no     lt-0/0/0.32
+2001:db8:2:34::4             2c:6b:f5:00:4f:01  reachable   30  yes no      lt-0/0/0.34
+2001:db8:2:35::5             2c:6b:f5:00:4f:01  reachable   29  yes no      lt-0/0/0.35
+fe80::5200:0:0:d00           2c:6b:f5:00:4f:00  stale       1042 yes no     lt-0/0/0.31
+fe80::5200:0:0:1700          2c:6b:f5:00:4f:00  stale       1002 no no      lt-0/0/0.32
+fe80::5200:0:0:2b00          2c:6b:f5:00:4f:01  stale       1017 yes no     lt-0/0/0.34
+fe80::5200:0:0:3500          2c:6b:f5:00:4f:01  stale       1031 yes no     lt-0/0/0.35"""
+},
+{
+"question" : """
+IPv6 Static Route
+
+set routing-options rib inet6.0 static route 2001:db8:1::1/128 next-hop 2001:db8:2:13::1
+
+""",
+"answer" : """set routing-options rib inet6.0 static route 2001:db8:1::1/128 next-hop 2001:db8:2:13::1""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+IPv6 Dynamic Routing
+
+ISIS: no changes needed
+OSPF: configure OSPFv3
+
+iBGP:
+set protocols bgp group internal6 type internal
+set protocols bgp group internal6 local-address 2001:db8:1::3
+set protocols bgp group internal6 neighbor 2001:db8:1::1
+set protocols bgp group internal6 neighbor 2001:db8:1::2
+set protocols bgp group internal6 neighbor 2001:db8:1::4
+set protocols bgp group internal6 neighbor 2001:db8:1::5
+---
+pass
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
+
+
+# 13. Tunneling
+questions_tunneling = [
+{
+"question" : """
+Tunneling
+
+GRE
+    gr-0/0/0
+IP-over-IP
+    ip-0/0/0
+
+# Enable Tunneling
+set chassis fpc 0 pic 0 tunnel-services
+set chassis fpc 0 pic 0 tunnel-services bandwidth 1g
+show chassis
+---
+
+set chassis fpc 0 pic 0 tunnel-services bandwidth 1g
+""",
+"answer" : """set chassis fpc 0 pic 0 tunnel-services bandwidth 1g""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+Tunneling
+IP-over-IP
+    ip-0/0/0
+
+WAN IPs:
+|vMX1: 12.12.12.12| <-> |vMX2: 22.22.22.22|
+
+set interfaces ip-0/0/0 unit 0 tunnel source 12.12.12.12
+set interfaces ip-0/0/0 unit 0 tunnel destination 22.22.22.22
+set interfaces ip-0/0/0 unit 0 family inet address 10.0.0.1/24
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+Tunneling
+GRE
+    gr-0/0/0
+
+Multicast support
+
+32-bit GRE Header + IP Header
+    4-bytes + 20 bytes
+|IP(20-bytes)|GRE(4-bytes)|IP|TCP/UDP|L2|Data|L2-CRC|
+
+WAN IPs:
+|vMX1: 12.12.12.12| <-> |vMX2: 22.22.22.22|
+
+set interfaces gr-0/0/0 unit 0 tunnel source 12.12.12.12
+set interfaces gr-0/0/0 unit 0 tunnel destination 22.22.22.22
+set interfaces gr-0/0/0 unit 0 family inet address 10.0.0.1/24
+set interfaces gr-0/0/0 unit 0 family inet6 address 2001:cccc:aaaa::aacc/64
+
+set protocols ospf area 2 gr-0/0/0.0
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+Tunneling
+GRE
+    gr-0/0/0
+
+Frames over GRE
+
+set chassis network-services enhanced-ip
+set interfaces gr-0/0/0 unit 0 tunnel source
+set interfaces gr-0/0/0 unit 0 tunnel destination
+set interfaces gr-0/0/0 unit 0 family bridge interface-mode trunk
+set interfaces gr-0/0/0 unit 0 family bridge vlan-id-list 100
+set interfaces gr-0/0/0 unit 0 family bridge core-facing
+
+set routing-instances vSW instance-type virtual-switch
+set routing-instances vSW interface gr-0/0/0.0
+set routing-instances vSW bridge-domains 100 vlan-id 100
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+Tunneling
+GRE
+    gr-0/0/0
+
+MPLS over GRE
+
+set interfaces gr-0/0/0 unit 0 tunnel source
+set interfaces gr-0/0/0 unit 0 tunnel destination
+set interfaces gr-0/0/0 unit 0 family inet address 10.0.0.1/24
+set interfaces gr-0/0/0 unit 0 family mpls
+
+set protocols mpls interface gr-0/0/0.0
+set protocols ldp interface gr-0/0/0.0
+set protocols ospf area 0 interface gr-0/0/0.0
+
+""",
+"answer" : """""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+]
 
 questions_lacp = [
 {
@@ -1848,6 +2131,7 @@ MC-LAG
 Just look like LAG to client.
 
 ICL - Inter-Chassis Link
+ICCP - Inter-Chassis Control Protocol
 
 State Modes:
     -Active-Standby
@@ -2010,122 +2294,26 @@ set interfaces ae0 aggregated-ether-options mc-ae status-control standby
 },
 ]
 
-questions_tunneling = [
+
+questions_bfd = [
 {
 "question" : """
-Tunneling
+#########
+###BFD###
+#########
 
-GRE
-    gr-0/0/0
-IP-over-IP
-    ip-0/0/0
+set protocols bgp ibgp bfd-liveness-detection minimum-interval 50
+set protocols bgp ibgp bfd-liveness-detection multiplier 3
 
-# Enable Tunneling
-set chassis fpc 0 pic 0 tunnel-services
-set chassis fpc 0 pic 0 tunnel-services bandwidth 1g
-show chassis
+show bfp session
+---
 
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-Tunneling
-IP-over-IP
-    ip-0/0/0
-
-WAN IPs:
-|vMX1: 12.12.12.12| <-> |vMX2: 22.22.22.22|
-
-set interfaces ip-0/0/0 unit 0 tunnel source 12.12.12.12
-set interfaces ip-0/0/0 unit 0 tunnel destination 22.22.22.22
-set interfaces ip-0/0/0 unit 0 family inet address 10.0.0.1/24
+set protocols bgp ibgp bfd-liveness-detection minimum-interval 50
+set protocols bgp ibgp bfd-liveness-detection multiplier 3
 
 """,
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-Tunneling
-GRE
-    gr-0/0/0
-
-Multicast support
-
-32-bit GRE Header + IP Header
-    4-bytes + 20 bytes
-|IP(20-bytes)|GRE(4-bytes)|IP|TCP/UDP|L2|Data|L2-CRC|
-
-WAN IPs:
-|vMX1: 12.12.12.12| <-> |vMX2: 22.22.22.22|
-
-set interfaces gr-0/0/0 unit 0 tunnel source 12.12.12.12
-set interfaces gr-0/0/0 unit 0 tunnel destination 22.22.22.22
-set interfaces gr-0/0/0 unit 0 family inet address 10.0.0.1/24
-set interfaces gr-0/0/0 unit 0 family inet6 address 2001:cccc:aaaa::aacc/64
-
-set protocols ospf area 2 gr-0/0/0.0
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-Tunneling
-GRE
-    gr-0/0/0
-
-Frames over GRE
-
-set chassis network-services enhanced-ip
-set interfaces gr-0/0/0 unit 0 tunnel source
-set interfaces gr-0/0/0 unit 0 tunnel destination
-set interfaces gr-0/0/0 unit 0 family bridge interface-mode trunk
-set interfaces gr-0/0/0 unit 0 family bridge vlan-id-list 100
-set interfaces gr-0/0/0 unit 0 family bridge core-facing
-
-set routing-instances vSW instance-type virtual-switch
-set routing-instances vSW interface gr-0/0/0.0
-set routing-instances vSW bridge-domains 100 vlan-id 100
-
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-{
-"question" : """
-Tunneling
-GRE
-    gr-0/0/0
-
-MPLS over GRE
-
-set interfaces gr-0/0/0 unit 0 tunnel source
-set interfaces gr-0/0/0 unit 0 tunnel destination
-set interfaces gr-0/0/0 unit 0 family inet address 10.0.0.1/24
-set interfaces gr-0/0/0 unit 0 family mpls
-
-set protocols mpls interface gr-0/0/0.0
-set protocols ldp interface gr-0/0/0.0
-set protocols ospf area 0 interface gr-0/0/0.0
-
-""",
-"answer" : """""",
+"answer" : """set protocols bgp ibgp bfd-liveness-detection minimum-interval 50
+set protocols bgp ibgp bfd-liveness-detection multiplier 3""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -2139,7 +2327,7 @@ questions_chassis_ha = [
 VRRP
     -Master | Backup
         -Priority: 1-254, or 255 if saving an IP
-        -Highest IP Address
+        -Highest IP Address to tie break
     -224.0.0.18
     -Group-ID (0-255, 8-bit)
     -VIP
@@ -2151,9 +2339,13 @@ set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 virtua
 set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 priority 120
 
 show vrrp
+---
 
+set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 virtual-address 10.12.12.6
+set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 priority 120
 """,
-"answer" : """""",
+"answer" : """set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 virtual-address 10.12.12.6
+set interfaces xe-0/0/0 unit 231 inet address 10.12.12.1/29 vrrp-group 12 priority 120""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -2162,13 +2354,17 @@ show vrrp
 {
 "question" : """
 Graceful Restart
+    -Standards Based, good if only one RE
     -Cisco: Non-Stop Forwarding != Juniper NSR
     -Helpers, keep a copy of your neighbors control plane
 
 set routing-options graceful-restart
 
+# Verify with OSPF:
 show ospf overview
+---
 
+set routing-options graceful-restart
 """,
 "answer" : """set routing-options graceful-restart""",
 "prompt": "root@vmx1# ",
@@ -2182,12 +2378,17 @@ GRES (Graceful Routing Engine Switchover)
     RE- Routing Engine (re0 and re1)
     PFE - Attach and Reattach to the running RE
     Does not support Control Plane failover
-        Combine with Graceful Restart to speed up control plane convergence
+        Combine with NSR/NSB to speed up control plane convergence
+
+GRES + NSR = subsecond failover
 
 set chassis redundancy graceful-switchover
 
 show system switchover
 request chassis routing-engine master switch check
+---
+
+set chassis redundancy graceful-switchover
 
 """,
 "answer" : """set chassis redundancy graceful-switchover""",
@@ -2212,9 +2413,14 @@ set routing-options nonstop-routing
 set system commit synchronize
 
 show task replication
+---
+
+set routing-options nonstop-routing
+set system commit synchronize
 
 """,
-"answer" : """""",
+"answer" : """set routing-options nonstop-routing
+set system commit synchronize""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
@@ -2231,6 +2437,34 @@ Update REs one-by-one
 
 request system software in-service-upgrade /var/tmp/junos-19.2R4.8.tgz reboot
 
+
+request system software in-service-upgrade /myimg reboot
+
+""",
+"answer" : """request system software in-service-upgrade /myimg reboot""",
+"prompt": "root@vmx1> ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+ERP - Ethernet Ring Protection Switching
+
+Used in Ring Structures
+
+RPL - Ring Protection Link (blocked during normal operations)
+RPL Owner
+    -floods R-APS Ring-Automatic Protection Switching Packets
+
+During failure switches with failed link flood R-APS packets
+and RPL Owner unblocks RPL link.
+
+Recovery
+    Failed link switches set a flab in the R-APS, RPL-Owner receives info and sets a timer
+    RPL owner unblocks link und floods R-APS again 
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
@@ -2243,20 +2477,8 @@ request system software in-service-upgrade /var/tmp/junos-19.2R4.8.tgz reboot
 Virtual Chassis
 
 Combine multiple EXs into one logical chassis
-""",
-"answer" : """""",
-"prompt": "root@vmx1# ",
-"clear_screen": True,
-"suppress_positive_affirmation": False,
-"post_task_output": """"""
-},
-]
-
-questions_ipv6 = [
-{
-"question" : """
-OSPF
-
+---
+pass
 """,
 "answer" : """""",
 "prompt": "root@vmx1# ",
