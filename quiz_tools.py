@@ -12,7 +12,7 @@ def print_encouragement():
     encouragement = ["Great Job!", "Good Work!", "That's the answer :)", "Yeap.", "Bon Travail, mon ami!",
                     "That's the stuff, pal!", "Merde, vous etes trop fort, mon capitaine!!!", "Volltreffer!",
                     "Les erreurs passent, il n'y a que le vrai qui reste.", "Il ne suffit pas de faire le bien, faut encore le bien faire.",
-                    "Don't feel sorry for yourself. Only assholes do that.", "Übung macht den Meister.",
+                    "Siempre parece imposible hasta que se convierte en realidad.", "Übung macht den Meister.",
                     "If you're in pitch blackness, all you can do is sit tight unit your eyes adjust to the dark.",
                     "Bald reif hält nicht steif.", "Anfangen ist leicht, Beharren eine Kunst.",
                     "Proście, a będzie wam dane, szukajcie, a znajdziecie.", "Thank You Mario, But Our Princess is in Another Castle!"]
