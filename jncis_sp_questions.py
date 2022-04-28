@@ -1301,9 +1301,17 @@ MPLS
 Label (20-bits) | CoS (3-bits) | Stack-bit | TTL (8-bits)
 
 MPLs, LDP, CSPF, SR (SPRING)
+LIB - 
+
+L2 - VPLS, EVPN
+P2MP - MPLS for multicast technologies
 
 inet.3      <--- inet <-> mpls
+    Used to keep track of the LSP egress points and contains signaled LSPs
+    at ingress node. Used on ingress to check if there is an LSP to a destination.
 mpls.0
+    Label-Switching Table. Mappings between incoming Labels and forwarding actions.
+    Used by Transit and Egress routers.
 
 inet.3 populated by
     LDP, RP 9
@@ -1338,8 +1346,17 @@ set protocols mpls interface lo0.0""",
 MPLS
 
 Labels:
+  0: Explict Null (Retain the label for last hop)
+  1: Router Alert Label
+  2: IPv6 Explicit Null
   3: Implicit Null (PHP)
-  4: Explict Null (Retain the label for last hop)
+  4-6: Unassigned
+  7: Entropy Label Indicator
+  8-12: Unassigned
+  13: Generic Associated Channel Label
+  14: OAM (Operation Administration Maintenance) Alert Label
+  15: Unassigned
+  
 
 Label for Implicit Null?
 
@@ -1353,7 +1370,39 @@ Label for Implicit Null?
 {
 "question" : """
 MPLS
+
+LIB:
+    Sometimes two labels: S-bit=0, S-bit=1
+
+View the LIB:
+
+""",
+"answer" : """show route table mpls.0""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+---
+show mpls interface
+""",
+"answer" : """show mpls interface""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """Interface        State       Administrative groups (x: extended)
+lt-0/0/0.13      Dn         <none>"""
+},
+{
+"question" : """
+MPLS
 Static LSP:
+
+Name & Label Values
+Valid Static Labels: 1,000,000 to 1,048,575
 
 # Ingress Router
 set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
@@ -1372,9 +1421,119 @@ set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 1
 
 show mpls static-lsp
 ---
-pass
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
 """,
-"answer" : """""",
+"answer" : """set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+Static LSP:
+
+Name & Label Values
+Valid Static Labels: 1,000,000 to 1,048,575
+
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
+
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+
+show mpls static-lsp
+---
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+""",
+"answer" : """set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+Static LSP:
+
+Name & Label Values
+Valid Static Labels: 1,000,000 to 1,048,575
+
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
+
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+
+show mpls static-lsp
+---
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+""",
+"answer" : """set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3""",
+"prompt": "root@vmx1# ",
+"clear_screen": True,
+"suppress_positive_affirmation": False,
+"post_task_output": """"""
+},
+{
+"question" : """
+MPLS
+Static LSP:
+
+Name & Label Values
+Valid Static Labels: 1,000,000 to 1,048,575
+
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
+
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+
+show mpls static-lsp
+---
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+""",
+"answer" : """set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4""",
 "prompt": "root@vmx1# ",
 "clear_screen": True,
 "suppress_positive_affirmation": False,
