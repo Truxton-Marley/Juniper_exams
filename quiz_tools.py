@@ -5,7 +5,7 @@ from os import system, name
 from sys import exit
 
 ###################################
-###      Multiple Choice        ###
+###         Long Answer         ###
 ###################################
 
 def print_encouragement():
@@ -100,16 +100,22 @@ def get_blanks(text):
     return blanks
 
 def get_fib_question(file):
+    clear_screen_slowly(0)
     text = get_text(file)
     blanks = get_blanks(text)
     for i, line in enumerate(text.split("\n")):
+        time.sleep(1)
+        print(line)
+    clear_screen_slowly(2)
+    for i, line in enumerate(text.split("\n")):
+        time.sleep(1)
         if i not in blanks:
             print(line)
-        elif line.strip().startswith("!"):
+        elif line.strip().startswith("!") or line.strip().startswith("#") or not line.strip():
             print(line)
         else:
             solution = line
-            print(line)
+            print("### Copy Me: ###\n",line)
             response = input()
             while solution.lower() != response.lower():
                 print("Answer:", line)

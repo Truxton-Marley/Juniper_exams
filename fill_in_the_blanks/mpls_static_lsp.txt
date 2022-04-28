@@ -1,0 +1,19 @@
+########################   Static MPLS LSPs   ########################
+
+# Ingress Router
+set protocols mpls static-label-switched-path ToBunny ingress to 4.4.4.4
+set protocols mpls static-label-switched-path ToBunny ingress next-hop 10.12.12.2
+set protocols mpls static-label-switched-path ToBunny ingress push 1000002
+
+set routing-options static route 6.6.6.6/32 static-lsp-next-hop ToBunny
+
+# Transit Router
+set protocols mpls static-label-switched-path ToBunny transit 1000002 swap 1000003
+set protocols mpls static-label-switched-path ToBunny transit 1000002 next-hop 10.23.23.3
+
+# PHP Router
+set protocols mpls static-label-switched-path ToBunny transit 1000003 pop
+set protocols mpls static-label-switched-path ToBunny transit 1000003 next-hop 10.34.34.4
+
+# Verify
+show mpls static-lsp
